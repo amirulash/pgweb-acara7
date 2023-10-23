@@ -2,7 +2,13 @@
 <html>
 
 <head>
-    <title>Indonesia</title>
+    <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" 
+    rel="stylesheet" 
+    integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" 
+    crossorigin="anonymous"
+    />
+    <title>OpenLayers</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v3.20.1/css/ol.css" type="text/css">
     <!-- The line below is only needed for old environments like Internet
 Explorer and Android 4.x -->
@@ -13,31 +19,32 @@ ement.prototype.classList,URL"></script>
         #map:focus {
             outline: #4A74A8 solid 0.15em;
         }
+        #popup {
+        background-color: rgba(207, 83, 67, 0.692); 
+        padding: 3px; 
+        border-radius: 4px; 
+        box-shadow: 0 1px 4px rgba(249, 247, 247, 0.2); 
+        font-size: 14px;
+        font-style: initial;
+    }
     </style>
 </head>
 
 <body>
+    <div class="container">
+        <div class="card mt-3 shadow"></div>
+        <div class="alert alert-danger text-center" mt-4 role="alert">
+            <h2> 
+                <i class="fa-solid fa-city"></i>
+                SEBARAN TITIK COFFESHOP DI AREA TUBAN
+            </h2>
+            <div id="popup"></div>
+        </div>>
     <div id="map" class="map" tabindex="0"></div>
     <button id="zoom-out">Zoom out</button>
     <button id="zoom-in">Zoom in</button>
     <script>
-        var map = new ol.Map({
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()
-                })
-            ],
-            target: 'map',
-            controls: ol.control.defaults({
-                attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
-                    collapsible: false
-                })
-            }),
-            view: new ol.View({
-                center: ol.proj.fromLonLat([110.6764, -7.7411]), // Koordinat Indonesia
-                zoom: 7, // Tingkat zoom awal
-            })
-        });
+        
         document.getElementById('zoom-out').onclick = function () {
             var view = map.getView();
             var zoom = view.getZoom();
@@ -49,9 +56,85 @@ ement.prototype.classList,URL"></script>
             var zoom = view.getZoom();
             view.setZoom(zoom + 1);
         };
+        var Circle = ol.style.Circle,
+            Style = ol.style.Style;
+
+        var markers = [
+            { lat: -6.8937338, lon: 112.0193916, info: 'Kopi Sof' },
+            { lat: -6.8948103, lon: 112.046398, info: 'Serasa Cafe' },
+            { lat: -6.8946435, lon: 112.0473662, info: 'DSultan Cafe' },
+            { lat: -6.8465883,lon: 112.0157976 , info: 'DCemara Beach Resto & Cafe' },
+            { lat: -6.8504768,lon: 112.0184372, info: 'Rindu Jiwa Tuban' }
+        ];
+
+        var vectorSource = new ol.source.Vector();
+
+        markers.forEach(function (marker) {
+            var pointFeature = new ol.Feature({
+                geometry: new ol.geom.Point(
+                    ol.proj.fromLonLat([marker.lon, marker.lat])
+                ),
+                text: marker.info
+                
+            });
+
+            var pointStyle = new Style({
+                image: new Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({ color: 'green' }),
+                    stroke: new ol.style.Stroke({ color: 'white', width: 2 }),
+                }),
+            });
+
+            pointFeature.setStyle(pointStyle);
+            vectorSource.addFeature(pointFeature);
+        });
+
+        var vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+        });
+
+        var baseMap = new ol.layer.Tile({
+            source: new ol.source.OSM()
+        });
+        
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+                baseMap,
+                vectorLayer
+            ],
+            view: new ol.View({
+                center: ol.proj.transform([112, -7], 'EPSG:4326', 'EPSG:3857'),
+                zoom: 10, // Tingkat zoom awal
+            })
+        });
+        // Untuk membuat popup info saat popup di klik
+        var element = document.getElementById('popup');
+
+        var popup = new ol.Overlay({
+        element: element,
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, -5],
+        });
+        map.addOverlay(popup);
+
+        // display popup on click
+        map.on('click', function (evt) {
+        var feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+            return feature;
+        });
+        if (feature) {
+                var coordinates = feature.getGeometry().getCoordinates();
+                popup.setPosition(coordinates);
+                var content = feature.get('text');
+                element.innerHTML = content;
+            } else {
+                popup.setPosition(undefined);
+            }
+        });
     </script>
+
 </body>
-
-</html>
-
 </html>
